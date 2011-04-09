@@ -4,7 +4,7 @@
 
 include $(GOROOT)/src/Make.inc
 
-TARG=fineline
+TARG=github.com/edsrzf/fineline
 
 GOFILES=\
 	buffer.go\
