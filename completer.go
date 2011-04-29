@@ -128,7 +128,7 @@ func (c *FilenameCompleter) Complete(str string, cur int) []string {
 		// use current directory
 		dirPath, _ = os.Getwd()
 	}
-	dir, err := os.Open(dirPath, os.O_RDONLY, 0)
+	dir, err := os.Open(dirPath)
 	if err != nil {
 		panic(err.String())
 	}
