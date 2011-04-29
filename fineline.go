@@ -58,7 +58,7 @@ func unsupportedTerm() bool {
 	return false
 }
 
-func Read(prompt string) (line string, err os.Error) {
+func Read(prompt string, c Completer) (line string, err os.Error) {
 	// TODO: Check if STDIN is a TTY
 	if unsupportedTerm() {
 		// Fall back to plain old stdin reading
@@ -66,7 +66,6 @@ func Read(prompt string) (line string, err os.Error) {
 		line, err = r.ReadString('\n')
 	} else {
 		t := &term{}
-		t.c = NewSimpleCompleter([]string{"car", "cat", "dog"})
 		t.prompt = prompt
 		t.init()
 		line, err = t.getLine()
