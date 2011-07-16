@@ -34,7 +34,7 @@ func NewSimpleCompleter(list []string) *SimpleCompleter {
 
 // SetList sorts a list of strings and supplies that list to c.
 func (c *SimpleCompleter) SetList(list []string) {
-	sort.SortStrings(list)
+	sort.Strings(list)
 	c.list = list
 }
 
