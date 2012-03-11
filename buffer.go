@@ -1,9 +1,6 @@
 package fineline
 
-import (
-	"os"
-	"utf8"
-)
+import "unicode/utf8"
 
 // This is similar to bytes.Buffer, but it has random access
 type buffer struct {
@@ -70,14 +67,14 @@ func (b *buffer) Write(p []byte, pos int) {
 	copy(b.buf[pos:], p)
 }
 
-func (b *buffer) WriteByte(c byte, pos int) os.Error {
+func (b *buffer) WriteByte(c byte, pos int) error {
 	b.grow(1)
 	copy(b.buf[pos+1:], b.buf[pos:])
 	b.buf[pos] = c
 	return nil
 }
 
-func (b *buffer) WriteRune(r int, pos int) {
+func (b *buffer) WriteRune(r rune, pos int) {
 	if r < utf8.RuneSelf {
 		b.WriteByte(byte(r), pos)
 		return

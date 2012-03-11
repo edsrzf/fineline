@@ -2,8 +2,9 @@ package fineline
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
-	"os"
+	"io"
 	"strings"
 )
 
@@ -32,40 +33,40 @@ const (
 	noop
 )
 
-var keyMap = [...]int {
-	1: opHome, // ctrl-a
-	2: opLeft, // ctrl-b
-	3: opCancel, // ctrl-c
-	4: opEof, // ctrl-d
-	5: opEnd, // ctrl-e
-	6: opRight, // ctrl-f
-	7: noop, // ctrl-g
-	8: opBackspace, // ctrl-h
+var keyMap = [...]int{
+	1:    opHome,      // ctrl-a
+	2:    opLeft,      // ctrl-b
+	3:    opCancel,    // ctrl-c
+	4:    opEof,       // ctrl-d
+	5:    opEnd,       // ctrl-e
+	6:    opRight,     // ctrl-f
+	7:    noop,        // ctrl-g
+	8:    opBackspace, // ctrl-h
 	'\t': opComplete,
 	'\r': opSubmit,
-	11: opDeleteToEnd, // ctrl-k
-	12: opClear, // ctrl-l
+	11:   opDeleteToEnd, // ctrl-k
+	12:   opClear,       // ctrl-l
 	'\n': opSubmit,
-	14: noop, // ctrl-n
-	15: opSubmit, // ctrl-o
-	16: opUp, // ctrl-p
-	17: noop, // ctrl-q; should be quoted insert
-	18: noop, // ctrl-r; should be reverse history search
-	19: noop, // ctrl-s; should be forward history search?
-	20: opTranspose, // ctrl-t
-	21: opDeleteToBeginning, // ctrl-u
-	22: noop, // ctrl-v; should be quoted insert
-	23: noop, // ctrl-w; should be kill word
-	24: noop, // ctrl-x; should be something?
-	25: noop, // ctrl-y; should be yank
-	26: noop, // ctrl-z
-	27: opEscape,
-	127: opBackspace,
+	14:   noop,                // ctrl-n
+	15:   opSubmit,            // ctrl-o
+	16:   opUp,                // ctrl-p
+	17:   noop,                // ctrl-q; should be quoted insert
+	18:   noop,                // ctrl-r; should be reverse history search
+	19:   noop,                // ctrl-s; should be forward history search?
+	20:   opTranspose,         // ctrl-t
+	21:   opDeleteToBeginning, // ctrl-u
+	22:   noop,                // ctrl-v; should be quoted insert
+	23:   noop,                // ctrl-w; should be kill word
+	24:   noop,                // ctrl-x; should be something?
+	25:   noop,                // ctrl-y; should be yank
+	26:   noop,                // ctrl-z
+	27:   opEscape,
+	127:  opBackspace,
 }
 
-var cancelled = os.NewError("line cancelled")
+var cancelled = errors.New("line cancelled")
 
-func (t *term) exec(r *bufio.Reader, op, c int) (bool, os.Error) {
+func (t *term) exec(r *bufio.Reader, op int, c rune) (bool, error) {
 	switch op {
 	case opPutc:
 		t.putc(c)
@@ -76,11 +77,11 @@ func (t *term) exec(r *bufio.Reader, op, c int) (bool, os.Error) {
 	case opCancel:
 		return false, cancelled
 	case opEof:
-		if t.pos < t.buf.len() - 1 {
+		if t.pos < t.buf.len()-1 {
 			t.delete()
 			break
 		}
-		return false, os.EOF
+		return false, io.EOF
 	case opEnd:
 		t.end()
 	case opRight:
@@ -160,7 +161,7 @@ func (t *term) exec(r *bufio.Reader, op, c int) (bool, os.Error) {
 	return true, nil
 }
 
-func (t *term) putc(c int) {
+func (t *term) putc(c rune) {
 	t.buf.WriteRune(c, t.pos)
 	t.pos++
 	t.refreshLine()
@@ -298,13 +299,13 @@ func (t *term) refreshLine() {
 	bufStr := t.buf.String()
 	n := len(bufStr)
 	pl := len(t.prompt)
-	if n > t.cols - pl {
+	if n > t.cols-pl {
 		n = t.cols - pl
 	}
 	fmt.Print(bufStr[:n])
 	bufStr = bufStr[n:]
 	t.lines = 0
-	wrapCursor := n == t.cols - pl
+	wrapCursor := n == t.cols-pl
 	n = len(bufStr)
 	for n > 0 {
 		if n > t.cols {
@@ -324,5 +325,5 @@ func (t *term) refreshLine() {
 	}
 	x := (pl + t.pos) % t.cols
 	t.y = (pl + t.pos) / t.cols
-	t.setCursor(x, t.y - t.lines)
+	t.setCursor(x, t.y-t.lines)
 }

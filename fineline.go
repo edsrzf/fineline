@@ -10,15 +10,15 @@ import (
 
 type termCommon struct {
 	prompt string
-	buf *buffer
+	buf    *buffer
 	// number of lines we last wrote
-	lines int
+	lines     int
 	pos, cols int
-	c Completer
+	c         Completer
 	// candidates from last tab completion
 	candidates []string
-	display bool
-	y int
+	display    bool
+	y          int
 }
 
 // A circular array of history
@@ -58,7 +58,7 @@ func unsupportedTerm() bool {
 	return false
 }
 
-func Read(prompt string, c Completer) (line string, err os.Error) {
+func Read(prompt string, c Completer) (line string, err error) {
 	// TODO: Check if STDIN is a TTY
 	if unsupportedTerm() {
 		// Fall back to plain old stdin reading
@@ -74,10 +74,10 @@ func Read(prompt string, c Completer) (line string, err os.Error) {
 	return
 }
 
-func (t *term) getLine() (string, os.Error) {
+func (t *term) getLine() (string, error) {
 	r := bufio.NewReader(os.Stdin)
 	t.refreshLine()
-	var err os.Error
+	var err error
 	cont := true
 	for cont && err == nil {
 		c, _, err := r.ReadRune()
@@ -85,7 +85,7 @@ func (t *term) getLine() (string, os.Error) {
 			return "", err
 		}
 		var op int
-		if c < len(keyMap) {
+		if int(c) < len(keyMap) {
 			op = keyMap[c]
 		} else {
 			op = opPutc
