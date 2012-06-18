@@ -102,7 +102,10 @@ type FilenameCompleter struct {
 func (c *FilenameCompleter) Complete(str string, cur int) []string {
 	// find the prefix
 	pos := strings.LastIndex(str[:cur], c.Delim)
-	prefix := str[pos+1:cur]
+	prefix := str
+	if pos >= 0 {
+		prefix = str[pos:cur]
+	}
 
 	// four cases to consider:
 	// 1. No characters
