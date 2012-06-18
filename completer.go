@@ -130,13 +130,13 @@ func (c *FilenameCompleter) Complete(str string, cur int) []string {
 	}
 	dir, err := os.Open(dirPath)
 	if err != nil {
-		panic(err.Error())
+		return nil
 	}
 	defer dir.Close()
 	var candidates []string
 	names, err := dir.Readdir(-1)
 	if err != nil {
-		panic(err.Error())
+		return nil
 	}
 	for _, f := range names {
 		if strings.HasPrefix(f.Name(), prefix) {

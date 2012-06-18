@@ -34,10 +34,11 @@ type lineReader struct {
 }
 
 // NewLineReader creates a new LineReader that reads from stdin.
-func NewLineReader() *LineReader {
+func NewLineReader(c Completer) *LineReader {
 	var l LineReader
 	l.input = bufio.NewReader(os.Stdin)
 	l.Prompt = "$ "
+	l.c = c
 	return &l
 }
 
@@ -68,7 +69,7 @@ func unsupportedTerm() bool {
 	return false
 }
 
-func (l *LineReader) Read(c Completer) (line string, err error) {
+func (l *LineReader) Read() (line string, err error) {
 	// TODO: Move these checks to NewLineReader()
 	// TODO: Check if STDIN is a TTY
 	if unsupportedTerm() {
