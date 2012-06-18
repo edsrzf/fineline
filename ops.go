@@ -99,6 +99,8 @@ func (l *LineReader) exec(r *bufio.Reader, op int, c rune) (bool, error) {
 	case opClear:
 		l.clearScreen()
 	case opSubmit:
+		l.putc('\n')
+		l.setCursor(0, -l.y)
 		return false, nil
 	case opTranspose:
 		l.transpose()
