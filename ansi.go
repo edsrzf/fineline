@@ -5,18 +5,18 @@ import (
 	"strings"
 )
 
-type term struct {
-	termCommon
+type LineReader struct {
+	lineReader
+
+	origTerm termios
 }
 
-var origTerm termios
-
 // enable raw mode and gather metrics, like number of columns
-func (t *term) init() {
-	ttyIoctl(0, TCGETS, &origTerm)
+func (l *LineReader) raw() {
+	ttyIoctl(0, TCGETS, &l.origTerm)
 
 	// Modify the original mode
-	raw := origTerm
+	raw := l.origTerm
 	// Input modes - no break, no CR to NL, no parity check, no strip char,
 	//               no start/stop output control
 	raw.Iflag &^= BRKINT | ICRNL | INPCK | ISTRIP | IXON
@@ -33,17 +33,15 @@ func (t *term) init() {
 
 	var win winsize
 	winIoctl(1, TIOCGWINSZ, &win)
-	t.cols = int(win.Col)
-
-	t.buf = new(buffer)
+	l.cols = int(win.Col)
 }
 
-func (t *term) disableRawMode() {
-	ttyIoctl(0, TCSETSF, &origTerm)
+func (l *LineReader) restore() {
+	ttyIoctl(0, TCSETSF, &l.origTerm)
 }
 
 // x is absolute, y is relative
-func (t *term) setCursor(x, y int) {
+func (l *LineReader) setCursor(x, y int) {
 	fmt.Printf("\x1b[%dG", x + 1)
 	// positive is down, negative is up
 	if y > 0 {
@@ -54,18 +52,18 @@ func (t *term) setCursor(x, y int) {
 }
 
 // erase everything from the cursor to the end of the screen
-func (t *term) eraseToEnd() {
+func (l *LineReader) eraseToEnd() {
 	// erase to right
 	fmt.Print("\x1b[0J")
 }
 
-func (t *term) printCandidates() {
-	str := "\n\x1b[0G" + strings.Join(t.candidates, "\n\x1b[0G") + "\n"
+func (l *LineReader) printCandidates() {
+	str := "\n\x1b[0G" + strings.Join(l.candidates, "\n\x1b[0G") + "\n"
 	fmt.Print(str)
-	t.refreshLine()
+	l.refreshLine()
 }
 
-func (t *term) clearScreen() {
+func (l *LineReader) clearScreen() {
 	// move to upper left corner, then clear entire screen
 	fmt.Print("\x1b[H\x1b[2J")
 }

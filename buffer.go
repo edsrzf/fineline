@@ -40,6 +40,10 @@ func (b *buffer) remove(pos int) {
 	b.buf = b.buf[:len(b.buf)-1]
 }
 
+func (b *buffer) reset() {
+	b.buf = b.buf[:0]
+}
+
 func (b *buffer) pretruncate(pos int) {
 	newbuf := b.buf[pos:]
 	copy(b.buf, newbuf)

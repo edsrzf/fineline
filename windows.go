@@ -8,12 +8,13 @@ import (
 	"unsafe"
 )
 
-type term struct {
-	termCommon
-	// platform-specific
+type LineReader struct {
+	lineReader
+
 	// console handle
 	h uintptr
 	rows int
+	origTerm uint32
 }
 
 var (
@@ -69,10 +70,8 @@ type consoleScreenBufferInfo struct {
 	dwMaximumWindowSize coord
 }
 
-var origTerm uint32
-
 // enable raw mode and gather metrics, like number of columns
-func (t *term) init() {
+func (l *LineReader) raw() {
 	// STD_OUTPUT_HANDLE
 	h, errno := syscall.GetStdHandle(-11)
 	t.h = uintptr(h)
@@ -81,13 +80,13 @@ func (t *term) init() {
 		panic(err)
 	}
 	ok, _, e := syscall.Syscall(procGetConsoleMode, 2,
-		t.h, uintptr(unsafe.Pointer(&origTerm)), 0)
+		t.h, uintptr(unsafe.Pointer(&t.origTerm)), 0)
 	if ok == 0 {
 		err := os.NewSyscallError("GetConsoleMode", int(e))
 		panic(err)
 	}
 
-	raw := origTerm
+	raw := t.origTerm
 	raw &^= _ENABLE_LINE_INPUT | _ENABLE_ECHO_INPUT | _ENABLE_PROCESSED_INPUT | _ENABLE_WINDOW_INPUT
 	ok, _, e = syscall.Syscall(procSetConsoleMode, 2, t.h, uintptr(raw), 0)
 	if ok == 0 {
@@ -102,8 +101,8 @@ func (t *term) init() {
 	t.buf = new(buffer)
 }
 
-func (t *term) disableRawMode() {
-	ok, _, e := syscall.Syscall(procSetConsoleMode, 2, t.h, uintptr(origTerm), 0)
+func (l *LineReader) restore() {
+	ok, _, e := syscall.Syscall(procSetConsoleMode, 2, t.h, uintptr(t.origTerm), 0)
 	if ok == 0 {
 		err := os.NewSyscallError("SetConsoleMode", int(e))
 		panic(err)
@@ -111,37 +110,37 @@ func (t *term) disableRawMode() {
 }
 
 // x is absolute, y is relative
-func (t *term) setCursor(x, y int) {
+func (l *LineReader) setCursor(x, y int) {
 	pos := t.getCursorPos()
 	pos.x = int16(x)
 	pos.y += int16(y)
 	t.setCursorPos(pos)
 }
 
-func (t *term) eraseToEnd() {
+func (l *LineReader) eraseToEnd() {
 	pos := t.getCursorPos()
 	length := t.cols*(t.rows - int(pos.y) + 1) - int(pos.x)
 	t.fillConsoleOutputCharacter(' ' << 8, length, pos)
 }
 
-func (t *term) printCandidates() {
+func (l *LineReader) printCandidates() {
 	str := "\n\x1b[0G" + strings.Join(t.candidates, "\n\x1b[0G") + "\n"
 	fmt.Print(str)
 	t.refreshLine()
 }
 
-func (t *term) clearScreen() {
+func (l *LineReader) clearScreen() {
 	pos := coord{}
 	t.fillConsoleOutputCharacter(' ' << 8, t.cols*t.rows, pos)
 	t.setCursorPos(pos)
 }
 
-func (t *term) getCursorPos() coord {
+func (l *LineReader) getCursorPos() coord {
 	win := t.getConsoleInfo()
 	return win.dwCursorPosition
 }
 
-func (t *term) setCursorPos(pos coord) {
+func (l *LineReader) setCursorPos(pos coord) {
 	ok, _, e := syscall.Syscall(procSetConsoleCursorPosition, 2, t.h,
 		*(*uintptr)(unsafe.Pointer(&pos)), 0)
 	if ok == 0 {
@@ -150,7 +149,7 @@ func (t *term) setCursorPos(pos coord) {
 	}
 }
 
-func (t *term) getConsoleInfo() *consoleScreenBufferInfo {
+func (l *LineReader) getConsoleInfo() *consoleScreenBufferInfo {
 	var win consoleScreenBufferInfo
 	ok, _, e := syscall.Syscall(procGetConsoleScreenBufferInfo, 2, t.h,
 		uintptr(unsafe.Pointer(&win)), 0)
@@ -161,7 +160,7 @@ func (t *term) getConsoleInfo() *consoleScreenBufferInfo {
 	return &win
 }
 
-func (t *term) fillConsoleOutputCharacter(char uint16, length int, pos coord) {
+func (l *LineReader) fillConsoleOutputCharacter(char uint16, length int, pos coord) {
 	coord := uintptr(unsafe.Pointer(&pos))
 	out := uintptr(unsafe.Pointer(new(int)))
 	ok, _, e := syscall.Syscall6(procFillConsoleOutputCharacter, 5,

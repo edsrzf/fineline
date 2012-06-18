@@ -66,44 +66,44 @@ var keyMap = [...]int{
 
 var cancelled = errors.New("line cancelled")
 
-func (t *term) exec(r *bufio.Reader, op int, c rune) (bool, error) {
+func (l *LineReader) exec(r *bufio.Reader, op int, c rune) (bool, error) {
 	switch op {
 	case opPutc:
-		t.putc(c)
+		l.putc(c)
 	case opHome:
-		t.home()
+		l.home()
 	case opLeft:
-		t.left()
+		l.left()
 	case opCancel:
 		return false, cancelled
 	case opEof:
-		if t.pos < t.buf.len()-1 {
-			t.delete()
+		if l.pos < l.buf.len()-1 {
+			l.delete()
 			break
 		}
 		return false, io.EOF
 	case opEnd:
-		t.end()
+		l.end()
 	case opRight:
-		t.right()
+		l.right()
 	case opBackspace:
-		t.backspace()
+		l.backspace()
 	case opComplete:
-		if t.c != nil {
-			t.complete()
+		if l.c != nil {
+			l.complete()
 		} else {
-			t.putc(c)
+			l.putc(c)
 		}
 	case opDeleteToEnd:
-		t.deleteToEnd()
+		l.deleteToEnd()
 	case opClear:
-		t.clearScreen()
+		l.clearScreen()
 	case opSubmit:
 		return false, nil
 	case opTranspose:
-		t.transpose()
+		l.transpose()
 	case opDeleteToBeginning:
-		t.deleteToBeginning()
+		l.deleteToBeginning()
 	case opEscape:
 		var seq [2]byte
 		r.Read(seq[:])
@@ -117,60 +117,60 @@ func (t *term) exec(r *bufio.Reader, op int, c rune) (bool, error) {
 				}
 				if seq[1] == 51 && seq2[0] == 126 {
 					// delete
-					t.delete()
+					l.delete()
 				}
 				break
 			}
 			switch seq[1] {
 			case 65:
 				// down arrow
-				currentEntry++
-				if currentEntry > len(history) {
-					currentEntry = 0
+				l.currentEntry++
+				if l.currentEntry > len(l.history) {
+					l.currentEntry = 0
 				}
 			case 66:
 				// up arrow
-				currentEntry--
-				if currentEntry < 0 {
-					currentEntry = len(history) - 1
+				l.currentEntry--
+				if l.currentEntry < 0 {
+					l.currentEntry = len(l.history) - 1
 				}
 			case 67:
 				// right arrow
-				t.right()
+				l.right()
 			case 68:
 				// left arrow
-				t.left()
+				l.left()
 			case 70:
 				// end
-				t.end()
+				l.end()
 			case 72:
 				// home
-				t.home()
+				l.home()
 			}
 		} else if seq[0] == 79 {
 			switch seq[1] {
 			case 70:
 				// end
-				t.end()
+				l.end()
 			case 72:
 				// home
-				t.home()
+				l.home()
 			}
 		}
 	}
 	return true, nil
 }
 
-func (t *term) putc(c rune) {
-	t.buf.WriteRune(c, t.pos)
-	t.pos++
-	t.refreshLine()
+func (l *LineReader) putc(c rune) {
+	l.buf.WriteRune(c, l.pos)
+	l.pos++
+	l.refreshLine()
 }
 
-func (t *term) puts(s string) {
-	t.buf.WriteString(s, t.pos)
-	t.pos += len(s)
-	t.refreshLine()
+func (l *LineReader) puts(s string) {
+	l.buf.WriteString(s, l.pos)
+	l.pos += len(s)
+	l.refreshLine()
 }
 
 // finds the longest common string between the end of the first string and the
@@ -203,13 +203,13 @@ func commonPrefix(x, y string) string {
 	return x[:i]
 }
 
-func (t *term) complete() {
-	if t.display {
-		t.printCandidates()
+func (l *LineReader) complete() {
+	if l.display {
+		l.printCandidates()
 		return
 	}
-	str := t.buf.String()
-	candidates := t.c.Complete(str, t.pos)
+	str := l.buf.String()
+	candidates := l.c.Complete(str, l.pos)
 	n := len(candidates)
 	if n == 0 {
 		return
@@ -224,106 +224,106 @@ func (t *term) complete() {
 			prefix = commonPrefix(prefix, candidates[i])
 		}
 		complete = prefix
-		t.display = true
-		t.candidates = candidates
+		l.display = true
+		l.candidates = candidates
 	}
 	inter := findIntersect(str, complete)
 	if inter == complete {
 		return
 	}
-	t.puts(complete[len(inter):])
-	t.refreshLine()
+	l.puts(complete[len(inter):])
+	l.refreshLine()
 }
 
-func (t *term) backspace() {
-	if t.pos > 0 {
-		t.pos--
-		t.buf.remove(t.pos)
-		t.refreshLine()
+func (l *LineReader) backspace() {
+	if l.pos > 0 {
+		l.pos--
+		l.buf.remove(l.pos)
+		l.refreshLine()
 	}
 }
 
 // delete the character in front of the cursor, like the delete key
-func (t *term) delete() {
-	t.buf.remove(t.pos)
-	t.refreshLine()
+func (l *LineReader) delete() {
+	l.buf.remove(l.pos)
+	l.refreshLine()
 }
 
-func (t *term) deleteToBeginning() {
-	t.buf.pretruncate(t.pos)
-	t.pos = 0
-	t.refreshLine()
+func (l *LineReader) deleteToBeginning() {
+	l.buf.pretruncate(l.pos)
+	l.pos = 0
+	l.refreshLine()
 }
 
-func (t *term) deleteToEnd() {
-	t.buf.truncate(t.pos)
-	t.refreshLine()
+func (l *LineReader) deleteToEnd() {
+	l.buf.truncate(l.pos)
+	l.refreshLine()
 }
 
-func (t *term) home() {
-	t.pos = 0
-	t.refreshLine()
+func (l *LineReader) home() {
+	l.pos = 0
+	l.refreshLine()
 }
 
-func (t *term) end() {
-	t.pos = t.buf.len()
-	t.refreshLine()
+func (l *LineReader) end() {
+	l.pos = l.buf.len()
+	l.refreshLine()
 }
 
-func (t *term) transpose() {
-	t.buf.transpose(t.pos)
-	t.refreshLine()
+func (l *LineReader) transpose() {
+	l.buf.transpose(l.pos)
+	l.refreshLine()
 }
 
 // move the cursor left
-func (t *term) left() {
-	if t.pos > 0 {
-		t.pos--
-		t.refreshLine()
+func (l *LineReader) left() {
+	if l.pos > 0 {
+		l.pos--
+		l.refreshLine()
 	}
 }
 
 // move the cursor right
-func (t *term) right() {
-	if t.pos < t.buf.len() {
-		t.pos++
-		t.refreshLine()
+func (l *LineReader) right() {
+	if l.pos < l.buf.len() {
+		l.pos++
+		l.refreshLine()
 	}
 }
 
-func (t *term) refreshLine() {
+func (l *LineReader) refreshLine() {
 	// move to origin of the current line
-	t.setCursor(0, -t.y)
+	l.setCursor(0, -l.y)
 	// assuming the prompt won't wrap
-	fmt.Print(t.prompt)
-	bufStr := t.buf.String()
+	fmt.Print(l.Prompt)
+	bufStr := l.buf.String()
 	n := len(bufStr)
-	pl := len(t.prompt)
-	if n > t.cols-pl {
-		n = t.cols - pl
+	pl := len(l.Prompt)
+	if n > l.cols-pl {
+		n = l.cols - pl
 	}
 	fmt.Print(bufStr[:n])
 	bufStr = bufStr[n:]
-	t.lines = 0
-	wrapCursor := n == t.cols-pl
+	l.lines = 0
+	wrapCursor := n == l.cols-pl
 	n = len(bufStr)
 	for n > 0 {
-		if n > t.cols {
-			n = t.cols
+		if n > l.cols {
+			n = l.cols
 		}
 		fmt.Print(bufStr[:n])
 		bufStr = bufStr[n:]
-		wrapCursor = n == t.cols
+		wrapCursor = n == l.cols
 		n = len(bufStr)
-		t.lines++
+		l.lines++
 	}
-	t.eraseToEnd()
+	l.eraseToEnd()
 	if wrapCursor {
-		t.lines++
+		l.lines++
 		// move to next line
 		fmt.Print("\n")
 	}
-	x := (pl + t.pos) % t.cols
-	t.y = (pl + t.pos) / t.cols
-	t.setCursor(x, t.y-t.lines)
+	x := (pl + l.pos) % l.cols
+	l.y = (pl + l.pos) / l.cols
+	l.setCursor(x, l.y-l.lines)
 }

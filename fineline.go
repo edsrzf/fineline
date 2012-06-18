@@ -8,9 +8,21 @@ import (
 	"strings"
 )
 
-type termCommon struct {
-	prompt string
-	buf    *buffer
+// Common, platform-independent components
+type lineReader struct {
+	// The prompt that precedes any line entry
+	Prompt string
+	input  *bufio.Reader
+
+	// A circular array of history
+	history []string
+	// The most recent line in the history
+	lastEntry int
+	// The index of the line in history currently being shown
+	// -1 if we're not showing something in history.
+	currentEntry int
+
+	buf    buffer
 	// number of lines we last wrote
 	lines     int
 	pos, cols int
@@ -21,28 +33,26 @@ type termCommon struct {
 	y          int
 }
 
-// A circular array of history
-var history []string
-
-// The most recent line in the history
-var lastEntry int
-
-// The index of the line in history currently being shown
-// -1 if we're not showing something in history.
-var currentEntry int
-
-func SetMaxHistoryLen(len int) {
-	history = make([]string, len)
-	lastEntry = 0
+// NewLineReader creates a new LineReader that reads from stdin.
+func NewLineReader() *LineReader {
+	var l LineReader
+	l.input = bufio.NewReader(os.Stdin)
+	l.Prompt = "$ "
+	return &l
 }
 
-func AddHistory(line string) {
-	if len(history) > 0 {
-		lastEntry++
-		if lastEntry >= len(history) {
-			lastEntry = 0
+func (l *LineReader) SetMaxHistoryLen(len int) {
+	l.history = make([]string, len)
+	l.lastEntry = 0
+}
+
+func (l *LineReader) AddHistory(line string) {
+	if len(l.history) > 0 {
+		l.lastEntry++
+		if l.lastEntry >= len(l.history) {
+			l.lastEntry = 0
 		}
-		history[lastEntry] = line
+		l.history[l.lastEntry] = line
 	}
 }
 
@@ -58,25 +68,26 @@ func unsupportedTerm() bool {
 	return false
 }
 
-func Read(prompt string, c Completer) (line string, err error) {
+func (l *LineReader) Read(c Completer) (line string, err error) {
+	// TODO: Move these checks to NewLineReader()
 	// TODO: Check if STDIN is a TTY
 	if unsupportedTerm() {
 		// Fall back to plain old stdin reading
 		r := bufio.NewReader(os.Stdin)
 		line, err = r.ReadString('\n')
 	} else {
-		t := &term{}
-		t.prompt = prompt
-		t.init()
-		line, err = t.getLine()
-		t.disableRawMode()
+		l.raw()
+		line, err = l.getLine()
+		l.restore()
+		l.buf.reset()
+		l.pos = 0
 	}
 	return
 }
 
-func (t *term) getLine() (string, error) {
+func (l *LineReader) getLine() (string, error) {
 	r := bufio.NewReader(os.Stdin)
-	t.refreshLine()
+	l.refreshLine()
 	var err error
 	cont := true
 	for cont && err == nil {
@@ -90,11 +101,11 @@ func (t *term) getLine() (string, error) {
 		} else {
 			op = opPutc
 		}
-		cont, err = t.exec(r, op, c)
+		cont, err = l.exec(r, op, c)
 	}
 	if err == cancelled {
 		return "", nil
 	}
 
-	return t.buf.String(), err
+	return l.buf.String(), err
 }
