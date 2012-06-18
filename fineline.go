@@ -41,7 +41,7 @@ func NewLineReader() *LineReader {
 	return &l
 }
 
-func (l *LineReader) SetMaxHistoryLen(len int) {
+func (l *LineReader) SetMaxHistory(len int) {
 	l.history = make([]string, len)
 	l.lastEntry = 0
 }
