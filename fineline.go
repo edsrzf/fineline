@@ -91,7 +91,8 @@ func (l *LineReader) getLine() (string, error) {
 	var err error
 	cont := true
 	for cont && err == nil {
-		c, _, err := r.ReadRune()
+		var c rune
+		c, _, err = r.ReadRune()
 		if err != nil {
 			return "", err
 		}
