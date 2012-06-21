@@ -88,7 +88,10 @@ func (b *buffer) WriteRune(r rune, pos int) {
 }
 
 func (b *buffer) WriteString(s string, pos int) {
-	b.Write([]byte(s), pos)
+	n := len(s)
+	b.grow(n)
+	copy(b.buf[pos+n:], b.buf[pos:])
+	copy(b.buf[pos:], s)
 }
 
 func (b *buffer) Bytes() []byte {
