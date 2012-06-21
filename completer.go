@@ -10,9 +10,9 @@ import (
 
 // A Completer provides candidates for tab-completion.
 type Completer interface {
-	// Complete takes a string and a cursor position and returns
+	// Complete takes a string prefix and returns
 	// a list of candidate strings for tab-completion.
-	Complete(str string, cur int) []string
+	Complete(str string) []string
 }
 
 // A SimpleCompleter provides completion candidates from a list
@@ -64,14 +64,10 @@ func (c *SimpleCompleter) RemoveString(str string) {
 	c.list = c.list[:n-1]
 }
 
-func (c *SimpleCompleter) Complete(str string, cur int) []string {
+func (c *SimpleCompleter) Complete(str string) []string {
 	// find the prefix
-	tokStart := strings.LastIndex(str[:cur], c.Delim)
-	tokEnd := strings.Index(str[cur:], c.Delim)
-	if tokEnd < 0 {
-		tokEnd = len(str) - cur
-	}
-	prefix := str[tokStart+1:cur+tokEnd]
+	tokStart := strings.LastIndex(str, c.Delim)
+	prefix := str[tokStart+1:]
 
 	n := len(c.list)
 	searchFunc := func(i int) bool { return c.list[i] >= prefix }
@@ -99,12 +95,12 @@ type FilenameCompleter struct {
 	Delim string
 }
 
-func (c *FilenameCompleter) Complete(str string, cur int) []string {
+func (c *FilenameCompleter) Complete(str string) []string {
 	// find the prefix
-	pos := strings.LastIndex(str[:cur], c.Delim)
+	pos := strings.LastIndex(str, c.Delim)
 	prefix := str
 	if pos >= 0 {
-		prefix = str[pos:cur]
+		prefix = str[pos:]
 	}
 
 	// four cases to consider:
@@ -153,8 +149,8 @@ func (c *FilenameCompleter) Complete(str string, cur int) []string {
 	return candidates
 }
 
-func completeString(str string, cur int, c Completer) {
-	candidates := c.Complete(str, cur)
+func completeString(str string, c Completer) {
+	candidates := c.Complete(str)
 	switch len(candidates) {
 	case 0:
 		// do nothing

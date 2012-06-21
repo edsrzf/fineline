@@ -211,7 +211,7 @@ func (l *LineReader) complete() {
 		return
 	}
 	str := l.buf.String()
-	candidates := l.c.Complete(str, l.pos)
+	candidates := l.c.Complete(str[:l.pos])
 	n := len(candidates)
 	if n == 0 {
 		return

@@ -45,7 +45,7 @@ func listsEqual(x, y []string) bool {
 func TestSimpleCompleter(t *testing.T) {
 	c := NewSimpleCompleter(simpleList)
 	for _, test := range simpleTests {
-		list := c.Complete(test.input, len(test.input))
+		list := c.Complete(test.input)
 		if !listsEqual(test.expected, list) {
 			t.Errorf("expected list\n%v\ngot list\n%v\n", test.expected, list)
 		}
