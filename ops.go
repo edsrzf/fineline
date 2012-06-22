@@ -67,6 +67,9 @@ var keyMap = [...]int{
 var cancelled = errors.New("line cancelled")
 
 func (l *LineReader) exec(r *bufio.Reader, op int, c rune) (bool, error) {
+	if op != opComplete {
+		l.display = false
+	}
 	switch op {
 	case opPutc:
 		l.putc(c)
