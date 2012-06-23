@@ -9,10 +9,6 @@ package fineline
 import "C"
 
 const (
-	TCGETS     = C.TCGETS
-	TCSETS     = C.TCSETS
-	TCSETSW    = C.TCSETSW
-	TCSETSF    = C.TCSETSF
 	TIOCGWINSZ = C.TIOCGWINSZ
 
 	/* c_iflag bits */

@@ -3,6 +3,7 @@ package fineline
 import (
 	"fmt"
 	"strings"
+	"syscall"
 )
 
 type LineReader struct {
@@ -13,7 +14,7 @@ type LineReader struct {
 
 // enable raw mode and gather metrics, like number of columns
 func (l *LineReader) raw() {
-	ttyIoctl(0, TCGETS, &l.origTerm)
+	tcgetattr(0, &l.origTerm)
 
 	// Modify the original mode
 	raw := l.origTerm
@@ -29,15 +30,15 @@ func (l *LineReader) raw() {
 	raw.Cc[VMIN] = 1
 	raw.Cc[VTIME] = 0
 
-	ttyIoctl(0, TCSETSF, &raw)
+	tcsetattr(0, TCSAFLUSH, &raw)
 
 	var win winsize
-	winIoctl(1, TIOCGWINSZ, &win)
+	winIoctl(1, syscall.TIOCGWINSZ, &win)
 	l.cols = int(win.Col)
 }
 
 func (l *LineReader) restore() {
-	ttyIoctl(0, TCSETSF, &l.origTerm)
+	tcsetattr(0, TCSAFLUSH, &l.origTerm)
 }
 
 // x is absolute, y is relative
