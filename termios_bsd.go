@@ -11,7 +11,7 @@ func tcgetattr(fd int, t *termios) {
 }
 
 func tcsetattr(fd, op int, t *termios) {
-	var cmd int
+	var cmd uintptr
 	switch op {
 	case TCSANOW:
 		cmd = syscall.TIOCSETA
