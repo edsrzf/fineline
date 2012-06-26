@@ -10,7 +10,7 @@ func tcgetattr(fd int, t *termios) {
 	ttyIoctl(0, syscall.TIOCGETA, t)
 }
 
-func tcsetattr(fd int, t *termios) {
+func tcsetattr(fd, op int, t *termios) {
 	var cmd int
 	switch op {
 	case TCSANOW:
