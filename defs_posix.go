@@ -21,7 +21,6 @@ const (
 	INLCR   = C.INLCR
 	IGNCR   = C.IGNCR
 	ICRNL   = C.ICRNL
-	IUCLC   = C.IUCLC
 	IXON    = C.IXON
 	IXANY   = C.IXANY
 	IXOFF   = C.IXOFF
@@ -30,7 +29,6 @@ const (
 
 	/* c_oflag bits */
 	OPOST  = C.OPOST
-	OLCUC  = C.OLCUC
 	ONLCR  = C.ONLCR
 	OCRNL  = C.OCRNL
 	ONOCR  = C.ONOCR
@@ -59,7 +57,6 @@ const (
 	VEOF     = C.VEOF
 	VTIME    = C.VTIME
 	VMIN     = C.VMIN
-	VSWTC    = C.VSWTC
 	VSTART   = C.VSTART
 	VSTOP    = C.VSTOP
 	VSUSP    = C.VSUSP
