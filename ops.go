@@ -128,16 +128,16 @@ func (l *LineReader) exec(r *bufio.Reader, op int, c rune) (bool, error) {
 			}
 			switch seq[1] {
 			case 65:
-				// down arrow
-				l.currentEntry++
-				if l.currentEntry > len(l.history) {
-					l.currentEntry = 0
-				}
-			case 66:
 				// up arrow
 				l.currentEntry--
 				if l.currentEntry < 0 {
 					l.currentEntry = len(l.history) - 1
+				}
+			case 66:
+				// down arrow
+				l.currentEntry++
+				if l.currentEntry > len(l.history) {
+					l.currentEntry = 0
 				}
 			case 67:
 				// right arrow
